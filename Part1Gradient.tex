@@ -1,0 +1,170 @@
+\myhrule{}
+To implement the methods we follow the formulas 
+\begin{align}
+    q^{k+1} &= q^k + \alpha J_\kappa^T(q^k) [x_e^d - \kappa(q^k)] \tag{Gradient} \\ 
+    q^{k+1} &= q^k + \alpha J_\kappa^{-1}(q^k) [x_e^d - \kappa(q^k)] \tag{Newton}
+\end{align}
+Then we can use \texttt{sympy} python library to compute the $J_\kappa^{-1}(q^k)$ using the following lines to set up the basic variables:
+
+\begin{lstlisting}[language=Python]
+from sympy import sin, cos, Matrix, lambdify
+from sympy.abc import alpha, beta,gamma ,kappa
+import numpy as np
+
+J = Matrix([ cos(alpha) + cos(alpha+beta) + cos(alpha + beta + gamma) , sin(alpha) + sin(alpha+beta) + sin(alpha + beta + gamma), alpha + beta + gamma])
+Y = Matrix([alpha, beta, gamma])
+Jac = J.jacobian(Y)
+Jinv = Jac**-1 # Inversa
+jinv_func = lambdify((alpha, beta, gamma), Jinv, 'numpy')
+jac_direct_func= lambdify((alpha, beta, gamma), Jac, 'numpy')
+\end{lstlisting}
+After that the code follows directly where \texttt{history} is just used for plotting the values and $\alpha,\beta,\gamma$ are used as $\theta_1,\theta_2,\theta_3$.
+\begin{lstlisting}[language=Python]
+def newton():
+    q = np.array(INITIAL, dtype=float) 
+    target_pos = np.array(TARGET)
+    history=[]
+    for i in range(MAX_ITER):
+        current_pos = kappa(q=q)
+        history.append(current_pos[:2])
+        error_vector = target_pos - current_pos    
+        if np.linalg.norm(error_vector) < TOL:
+            return history    
+        inv_j_num = jinv_func(q[0], q[1], q[2])
+        q = q + ALPHA * (inv_j_num @ error_vector)   
+    return history
+\end{lstlisting}
+
+\begin{lstlisting}[language=Python]
+def gradient(alpha=ALPHA):
+    q = np.array(INITIAL, dtype=float) 
+    target_pos = np.array(TARGET)
+    history=[]
+    for i in range(MAX_ITER):
+        current_pos = kappa(q=q)
+        history.append(current_pos[:2])
+        error_vector = target_pos - current_pos
+        
+        if np.linalg.norm(error_vector) < TOL:
+            return history    
+        j_num = jac_direct_func(q[0], q[1], q[2])
+        q = q + alpha * (j_num.T @ error_vector)
+    return history
+\end{lstlisting}
+
+
+Then, if we plot it: 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Results/pi-2.png}
+    \caption{Results of the two methods with different values of $\alpha$. In this plot we used $q^0=[\frac\pi2,\frac\pi2,\frac\pi2]^\top$. In this configuration, we can see the importance of $\alpha$ since the stepsize actually determines the difference between convergence ($\alpha=0.1$) or bouncing back and forth ($\alpha=0.5$), of course choosing a large stepsize helps in a rapid convergence, but when "close" this could kill the process (indeed, with $\alpha=0.5$ the gradient method does not converge at all even after one million iterations). As done in many deep learning algorithms, a possible choice would be to choose a function for the stepsize $\alpha(n)$ where $n$ is the number of the iteration so that $\alpha(0)$ is regionally big and $\alpha(n)$ being a strictly decreasing function. A small detail that is important to notice is the following: in the top left plot, also the Newton method oscillates between some values so also Newton (for $\alpha=0.5$) does not converge. }
+    \label{fig:enter-label}
+\end{figure}
+The problem arises if $q^0=[0,0,0]^\top$ since it is a singular configuration, in fact: 
+$$\det(J) = -\sin(\theta_1)\cos(\theta_1 + \theta_2) + \sin(\theta_1 + \theta_2)\cos(\theta_1) = 2\sin(\theta_2) \quad \footnote{See the code for the calculation using \texttt{sympy}}$$ 
+Therefore, Newton's method risks to diverge if not properly adapted to avoid singular configurations. Then, if $\dot q^\star$ is such that $v_e=J\dot q^\star$, also $\dot q = \dot q^\star+P\dot q_0$ is a solution where $P$ is a projection matrix into the null space of $J$ ($\mathcal{N}(J)$) and from algebra we know $P=I-J^\top(JJ^\top)^{-1}J$. We also need to model $\dot q_0 = k_0 \left( \frac{\partial\omega(q)}{\partial q} \right)^\top$ and a typical $\omega$ function used to escaping singularitites is $\omega(q) = \sqrt{\det(J(q) J(q)^\top) +\varepsilon}$ where $\varepsilon\gtrapprox 0$.
+Then we need to modify the code listed above, otherwise the solution would be 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Results/origin.png}
+    \caption{Results of the two methods with different values of $\alpha$. In this plot we used $q^0=[0,0,0]^\top$. Again we see the problem of the stepsize $\alpha$.}
+    \label{fig:enter-label}
+\end{figure}
+This proves the issue: we can see that the left plots (the ones of the Newton's method) do not move the robotic arm from its initial position. 
+
+\begin{lstlisting}[language=python]
+def redundantNewton(alpha_step=0.1, k0=0.5):
+    w_sym = sqrt((Jac.T * Jac).det()+SCALAR_EPSILON) # w = root( det JJ )
+    grad_w_sym = w_sym.diff(Y)
+    w_func = lambdify((alpha, beta, gamma), w_sym, 'numpy') 
+    grad_w_func = lambdify((alpha, beta, gamma), grad_w_sym, 'numpy')
+    jac_func = lambdify((alpha, beta, gamma), Jac, 'numpy')
+    q = np.array(INITIAL, dtype=float) 
+    target_pos = np.array(TARGET)
+    history = []
+
+    for i in range(MAX_ITER):
+        current_pos = kappa(q=q)
+        history.append(current_pos.copy())
+        error_vector = target_pos - current_pos    
+        if np.linalg.norm(error_vector) < TOL:
+            print(f"Target raggiunto {i}")
+            return history    
+        J_n = jac_func(q[0], q[1], q[2])
+        g_w_n = grad_w_func(q[0], q[1], q[2]) 
+        J_pinv = np.linalg.pinv(J_n, rcond=1e-3)
+        I = np.eye(len(q))
+        P = I - J_pinv @ J_n
+        q_dot_task = J_pinv @ error_vector
+        q_dot_null = P @ (k0 * g_w_n.T).flatten()
+        q = q + alpha_step * (q_dot_task + q_dot_null)      
+    return history
+\end{lstlisting}
+
+We can finally see the results. 
+
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Results/originWithCorrections.png}
+    \caption{Results of the two methods with different values of $\alpha$. In this plot we used $q^0=[0,0,0]^\top$ and the \texttt{redundantNewton} method}
+    \label{fig:enter-label}
+\end{figure}
+A final possible attempt is using the generalized inverse (right pseudo inverse \footnote{Note that in the code below the calculations were done "manually" instead of using the \texttt{pinv} function from \texttt{numpy}}) $J^\dagger=J^\top (J J^\top)^{-1}$ (again we need to be sure that $\det J^\dagger \neq 0$ hence we add $\lambda I$ for $\lambda\gtrapprox 0$). The code is really similar to the previous ones: 
+
+\begin{lstlisting}[language=python]
+def generalizedNewton(alpha_step=0.1, lam=0.1):
+    q = np.array(INITIAL, dtype=float)
+    target_pos = np.array(TARGET)
+    history = []
+    i=0
+    for i in range(MAX_ITER):
+        current_pos = kappa(q=q)
+        history.append(current_pos[:2].copy())
+        error_vector = target_pos - current_pos
+        if np.linalg.norm(error_vector) < TOL:
+            return history,i
+        J_n = jac_direct_func(q[0], q[1], q[2])         
+        JJT = J_n @ J_n.T                                   
+        J_d = J_n.T @ np.linalg.inv(JJT + lam * np.eye(3))  
+        q = q + alpha_step * (J_d @ error_vector)
+    return history,i
+\end{lstlisting}
+The only issue is that computing the pseudo inverse (analytically) takes too much time for \texttt{sympy}, so I had to evaluate it using \texttt{numpy}, which is much faster (but just numerical). 
+\begin{figure}[H]
+    \centering
+    \includegraphics[width=0.75\linewidth]{Results/Comparison.png}
+    \caption{Results of the two methods with different values of $\alpha$. In this plot we used $q^0=[0,0,0]^\top$.}
+    \label{fig:enter-label}
+\end{figure}
+A couple of final considerations can be done: using the two methods on the given inputs, the number of iterations needed for the convergence are:  
+\begin{comment}
+Start=pi/2, alpha=0.5 -> Generalized: 23 iter | Redundant: 17 iter
+Target raggiunto 102 \\ 
+Start=pi/2, alpha=0.1 -> Generalized: 151 iter | Redundant: 102 iter
+Target raggiunto 20 \\ 
+Start=0, alpha=0.5 -> Generalized: 27 iter | Redundant: 20 iter
+Target raggiunto 101 \\ 
+Start=0, alpha=0.1 -> Generalized: 134 iter | Redundant: 101 iter\\
+\end{comment}
+\begin{table}[H]
+    \centering
+    \begin{tabular}{cccc}
+        \toprule
+        \textbf{Start} & \textbf{Alpha} & \textbf{Generalized } & \textbf{Redundant}  \\
+        \midrule
+        $\bm{\pi/2}$ & 0.5 & 23 & 17  \\
+        $\bm{\pi/2}$ & 0.1 & 151 & 102  \\
+        $\bm{0}$       & 0.5 & 27 & 20  \\
+        $\bm{0}$       & 0.1 & 134 & 101 \\
+        \bottomrule
+    \end{tabular}
+\end{table}
+Overall, the generalized inverse performs worse in terms of the mere number of iterations, it is important to consider that the other path also does not consider other singularities that have to be avoided. 
+
+\myrule{}
+\myrule{}
+
+
+
+
+

@@ -1,0 +1,216 @@
+\input{tikz setting}
+
+\usepackage{pythonhighlight}
+\usepackage[Glenn]{fncychap}
+%\usepackage[italian]{babel}
+\usepackage{hhline}
+\usepackage{pdfpages}
+\usepackage{fontspec}
+\newcommand{\mymk}[1]{%
+  \tikz[baseline=(char.base)]\node[anchor=south west, draw,rectangle, rounded corners, inner sep=2pt, minimum size=7mm,
+    text height=2mm](char){\ensuremath{#1}} ;}
+
+\newcommand*\circled[1]{\tikz[baseline=(char.base)]{
+            \node[shape=circle,draw,inner sep=2pt,anchor = base] (char) {#1};}}
+%\setmainfont{Times new Roman}
+\usepackage{geometry}
+\newcommand{\centered}[1]{\begin{tabular}{l} #1 \end{tabular}}
+\usepackage{pgfplots}
+\usepackage{caption}
+\usepackage{multicol}
+\usepackage{xcolor}
+\usepackage{erewhon}
+\usepackage{marginnote}
+\usepackage{lettrine}
+\usepackage{wrapfig}
+\usepackage{lipsum}
+\usepackage{GoudyIn}
+\usepackage{yfonts,color}
+\usepackage{amssymb}
+\usepackage{amsmath}
+\usepackage{dsfont}
+\usepackage[many]{tcolorbox}
+\usepackage{multicol}
+\usepackage{pdfpages}
+\usepackage{circuitikz}
+\usepackage{xcolor}
+\usepackage{pagecolor}
+
+%\setcounter{DefaultLines}{3}%
+
+\usepackage{tikz,pgfplots}
+\usetikzlibrary{intersections}
+\pgfplotsset{compat=1.18, width=8cm, height=7cm}
+\usepackage{cancel}
+\usepackage{fancyhdr}
+\usepackage{hhline}
+\geometry{
+    a4paper,
+    total={170mm, 275mm},
+    top={20mm},
+    bottom={20mm}
+}
+\usepackage{calligra}
+\thispagestyle{empty}
+
+
+\date{}
+
+\vspace*{2\baselineskip}
+\usepackage{hyperref}
+
+\newcommand*{\titleGP}{
+    \vspace{-40pt} 
+    \begingroup 
+    \centering  % Ambiente di centratura
+    \vspace*{\baselineskip}
+    \rule{\textwidth}{1.6pt}\vspace*{-\baselineskip}\vspace*{2pt}
+    \rule{\textwidth}{0.4pt}\\[\baselineskip]
+    {\LARGE{Robotics first assignement} \\ 
+    \normalsize{\calligra{Matteo Padrin 2199438 }}}\\
+    [0.2\baselineskip]
+    \\ 
+\href{https://github.com/matteopadrin15-beep/RoboticsProject}{%
+    \raisebox{-0.3\height}{\includegraphics[width=0.07\linewidth]{github.png}}%
+    \hspace{0.2cm} % Spazio tra icona e link
+    \texttt{github.com/matteopadrin15-beep/RoboticsProject}%
+}
+        \rule{\textwidth}{0.4pt}\vspace*{-\baselineskip}\vspace{3.2pt}
+    \rule{\textwidth}{1.6pt}\\[\baselineskip]
+    \scshape  % Piccolo maiuscolo
+    \endgroup  % Chiudi il gruppo
+}
+\newcommand*\Eval[3]{\left.#1\right\rvert_{#2}^{#3}}
+\DeclareMathOperator{\di}{d\!}
+\newcommand{\Lap}{\mathcal{L}}
+\newcommand{\fem}{\mathcal{E}}
+\newcommand{\D}{\mathbb{D}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\Q}{\mathbb{Q}}
+\newcommand{\N}{\mathbb{N}}
+\newcommand{\C}{\mathbb{C}}
+\newcommand{\Z}{\mathbb{Z}}
+\newcommand{\x}{x_0}
+\newcommand{\y}{y_0}
+\newcommand{\comp}[2]{#1 \circ #2}
+\newcommand{\acc}{acc^{ne}}
+\newcommand{\Def}{def^{nte}}
+\newcommand{\sub}[1]{#1 \subseteq \R }
+\newcommand{\Succ}[1]{#1_{n}}
+\newcommand{\Lim}[4]{\lim_{#1\to #2} #3\ = #4}
+\newcommand{\liminfty}{\lim_{x \to +\infty}}
+
+\newcommand{\der}[1]{#1^{'}}
+\newcommand{\dersx}[1]{\der{#1}_{-}}
+\newcommand{\derdx}[1]{\der{#1}_{+}}
+\newcommand{\dder}[1]{#1^{''}}
+\newcommand{\inv}[1]{#1^{-1}}
+\newcommand{\T}{T_{n,\x}[}
+\newcommand{\Px}[1]{a_{n} #1^{n} + a_{n-1} #1^{n-1} + ... + a_{1} #1+ a_{0}}
+\makeatletter
+\newcommand*{\rom}[1]{\expandafter\@slowromancap\romannumeral #1@}
+\makeatother
+\newcommand{\vasymptote}[2][]{
+    \draw [densely dashed,#1] ({rel axis cs:0,0} -| {axis cs:#2,0}) -- ({rel axis cs:0,1} -| {axis cs:#2,0});
+}
+
+\pgfplotsset{
+    double y domain/.code 2 args={
+        \pgfmathsetmacro\doubleymin{#1*2}
+        \pgfmathsetmacro\doubleymax{#2*2}
+    },
+    ejes/.style args={#1:#2 #3:#4}{
+        double y domain={#3}{#4},
+        domain=#1:#2,
+        ymin=#3,ymax=#4, restrict y to domain=\doubleymin:\doubleymax,
+        samples=100,
+        enlargelimits=false,
+        axis lines=middle,
+        xtick={#1,...,#2}, ytick={#3,...,#4},
+        xticklabels=\empty, yticklabels=\empty,
+        every axis plot post/.style={
+            black,
+            mark=none,
+            smooth
+        },
+        scale only axis,
+        width=4cm,
+        height=4cm
+    }
+}
+\usepackage{colortbl}
+\usepackage{steinmetz}
+\newenvironment{sistema}% 
+{\left\lbrace\begin{array}{@{}l@{}}}% 
+{\end{array}\right.}
+\usepackage{scrextend,tikz,scalerel}
+\renewcommand{\thefootnote}{\roman{footnote}}
+\deffootnotemark{\textsuperscript{\vspace{0.1cm}\smash{\circled{\thefootnotemark}}}}
+\newcounter{Es}
+\newcounter{Hide}
+\setcounter{Hide}{0}
+\usepackage{ocgx2} %Per attivare / disattivare le soluzioni 
+\newcommand\typeSol{S}
+\newcommand\Solution[1]
+{
+    %S means show
+    \if \typeSol S {#1} \fi 
+
+    %H means partially hide 
+    \if \typeSol H {\switchocg{\theHide \myC}{Premere per mostrare / nascondere la soluzione} 
+    \begin{ocg}{My Layer}{\theHide}{off}
+    #1
+    \end{ocg}
+    \addtocounter{Hide}{1}
+    }
+    \fi
+
+    %N means not shown
+    \if \typeSol N {} \fi
+}
+
+\definecolor{myYellow}{RGB}{255, 255, 190}
+\newcommand{\codice}[1]
+{
+\colorbox{myYellow}{%
+    \parbox{\dimexpr\linewidth-2\fboxsep}{\texttt{#1}}%
+}
+}
+
+
+\newcommand{\drawarm}[5]{%
+  \coordinate (O)  at (0,0);
+  \coordinate (J1) at ([shift={(#1:1)}]O);
+  \coordinate (J2) at ([shift={(#2:1)}]J1);
+  \coordinate (J3) at ([shift={(#3:1)}]J2);
+ 
+  \draw[gray!40, thin] (-0.4,0) -- (1.8,0);
+  \draw[gray!40, thin] (0,-0.4) -- (0,2.6);
+ 
+  \draw[blue!70!black,   line width=2.2pt, line cap=round, #5] (O)  -- (J1);
+  \draw[teal!70!black,   line width=2.2pt, line cap=round, #5] (J1) -- (J2);
+  \draw[orange!80!black, line width=2.2pt, line cap=round, mydashdotted] (J2) -- (J3);
+  
+  \filldraw[gray!50]          (O)  circle (1.5pt);
+  
+  \filldraw[draw=blue!70!black, fill = blue!70!white]    (J1) circle (1.5pt);
+  \filldraw[draw=teal!70!black, fill =teal!70!white]    (J2) circle (1.5pt);
+  \filldraw[fill=red!70!black]     (J3) circle (2pt);
+  \node[right=4pt, font=\small] at (J3) {$(1,\,2)$};
+ 
+  \node[below left, font=\small] at (O) {$O$};
+ 
+  \node[font=\large\bfseries] at (0.7,-0.35) {#4};
+}
+\newcommand{\myrule}{%
+  \vspace{2mm}%
+  \hrule%
+  \vspace{2mm}%
+}
+\newcommand{\shortrule}{%
+  \vspace{0.5mm}%
+  \hrule%
+  \vspace{0.5mm}%
+}
+\usepackage{booktabs}
+\usepackage{bm}
